@@ -3,7 +3,9 @@ object Main extends App {
   import delegate Lif._
 
   val d = DoSyntax.dos{
-    Bind[Int, Option]("a", Value(Some(3)))
+     "a" </ Option(2)
   }
   println(d)
+
+  def hoge(): Option[Int] = None
 }
