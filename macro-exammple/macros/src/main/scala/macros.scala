@@ -35,25 +35,8 @@ object DoSyntax {
         })
         ???
     }
-    def go[B: Type](ex: Expr[Syntax[B, F]])(implicit env: Map[Expr[String], Expr[F[Any]]]): Expr[F[B]] = {
-      ex match {
-        case '{ (Bind($a, $f: RHS[B, F]): Bind[B, F]) } =>
-          println("== bind match ==")
-          matchRHS(f)
-        case '{ Bind($a, $f: Value[B, F]) } =>
-          println("== bind match 2==")
-          matchRHS(f)
-        case '{ Do($a: Bind[_, F], $b: Bind[_, F])} =>
-          println("== do match ==")
-          go[B](b.asInstanceOf[Expr[Syntax[B, F]]])
-        case _ =>
-          println("== unmatch ==")
-//          println(ex.show)
-          ???
-      }
-    }
     implicit val e: Map[Expr[String], Expr[F[Any]]] = Map.empty
-    go(xs)
+    ???
   }
 }
 
@@ -82,4 +65,20 @@ object DSL {
 
   inline def (symbol: => String) </[A, F[_]] (f: => F[A]): Bind[A, F] = Bind(symbol, Value(f))
   inline def bind[A, F[_]](symbol: => String, f: => F[A]): Bind[A, F] = Bind(symbol, Value(f))
+}
+
+object DSL2 {
+  sealed trait Exp[T]
+  case class Lit[T](a: T) extends Exp[T]
+  case class FMap[A, B](v: Lit[A], f: A => B) extends Exp[B]
+
+  inline def compile[A, T](x: => Exp[T]): T = {
+    ${impl[A, T]('x)}
+  }
+  private def impl[A: Type, T: Type](x: Expr[Exp[T]]) given QuoteContext: Expr[T] = {
+    x match {
+      case '{ Lit($a: T) } => a
+      case '{ FMap($a: Lit[A], $f: A => T) } => impl[A, T]('{Lit(${f}(${a}.a))})
+    }
+  }
 }
