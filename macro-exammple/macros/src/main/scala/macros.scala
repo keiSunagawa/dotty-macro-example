@@ -4,10 +4,12 @@ import scala.quoted.matching._
 object Lif {
   import scala.quoted.autolift._
 
-  implicit def OptionLiftable[T: Liftable](implicit t: Type[T]): Liftable[Option[T]] = new Liftable[Option[T]] {
-    def toExpr(xs: Option[T]) given QuoteContext: Expr[Option[T]] = xs match {
-      case Some(a) => '{ Some.apply[$t](${a}) }
-      case None => '{ None: Option[$t] }
+  given OptionLiftable[T: Liftable] as Liftable[Option[T]] given (t: Type[T]) {
+    def toExpr(xs: Option[T]) given QuoteContext: Expr[Option[T]] = {
+      xs match {
+        case Some(a) => '{ Some.apply[$t](${a}) }
+        case None => '{ None: Option[$t] }
+      }
     }
   }
 }
