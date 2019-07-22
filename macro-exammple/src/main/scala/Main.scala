@@ -13,10 +13,11 @@ object Main extends App {
 
   //   println(d)
   import scala.quoted._
+  import MacroHelper._
   import DSL2._
-  val res = compile[Int, String] {
-    FMap(Lit(3), a => (a + a).toString)
-  }
+
+  val res = 1 map { a => s"${a} is number"}
+
   println(res)
 
   def hoge(): Option[Int] = None

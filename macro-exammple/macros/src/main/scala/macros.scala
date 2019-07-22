@@ -68,17 +68,42 @@ object DSL {
 }
 
 object DSL2 {
-  sealed trait Exp[T]
-  case class Lit[T](a: T) extends Exp[T]
+  sealed trait Exp[A]
+  case class Lit[A](a: A) extends Exp[A]
   case class FMap[A, B](v: Lit[A], f: A => B) extends Exp[B]
 
-  inline def compile[A, T](x: => Exp[T]): T = {
-    ${impl[A, T]('x)}
-  }
-  private def impl[A: Type, T: Type](x: Expr[Exp[T]]) given QuoteContext: Expr[T] = {
-    x match {
-      case '{ Lit($a: T) } => a
-      case '{ FMap($a: Lit[A], $f: A => T) } => impl[A, T]('{Lit(${f}(${a}.a))})
+  inline def (a: A) map[A, B](f: A => B): B = {
+    compileLit{
+      compileFmap{
+        FMap(Lit(a), f)
+      }
     }
+  }
+  inline def compileLit[A](x: => Lit[A]): A = {
+    ${implLit('x)}
+  }
+  inline def compileFmap[A, B](x: => FMap[A, B]): Lit[B] = {
+    ${implFmap('x)}
+  }
+
+  private def implLit[A: Type](x: Expr[Lit[A]]) given QuoteContext: Expr[A] = {
+    val res = '{${x}.a}
+    println(res.show)
+    res
+  }
+  private def implFmap[A: Type, B: Type](x: Expr[FMap[A, B]]) given QuoteContext: Expr[Lit[B]] = {
+    x match {
+      case '{ FMap($a: Lit[A], $f: A => B) } => '{ Lit(${f}(${a}.a)) }
+    }
+  }
+}
+
+object MacroHelper {
+  inline def dumpAST[A](a: => A): A = {
+    ${implDump('a)}
+  }
+  private def implDump[A: Type](a: => Expr[A]) given QuoteContext: Expr[A] = {
+    println(a.show)
+    a
   }
 }
